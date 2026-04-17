@@ -20,7 +20,7 @@ def check_for_updates(current_version, silent=False):
         return False
     
     try:
-        response = requests.get("https://raw.githubusercontent.com/ваш_username/Planner_Blender_3D_Updates/main/version.json", timeout=5)
+        response = requests.get("https://raw.githubusercontent.com/UncleGriff81/Planner_Blender_3D_Updates/main/version.json", timeout=5)
         if response.status_code == 200:
             data = response.json()
             latest_version = data.get("version", "")

@@ -1,0 +1,90 @@
+{
+    "themes": {
+        "catppuccin_mocha": {
+            "name": "Catppuccin Mocha",
+            "description": "Тёмная, спокойная тема с пастельными акцентами",
+            "colors": {
+                "bg_color": "#1e1e2e",
+                "fg_color": "#cdd6f4",
+                "accent_color": "#89b4fa",
+                "success_color": "#a6e3a1",
+                "warning_color": "#f9e2af",
+                "error_color": "#f38ba8",
+                "info_color": "#89b4fa",
+                "frame_bg": "#313244",
+                "button_hover": "#45475a",
+                "timer_running_color": "#a6e3a1",
+                "timer_stopped_color": "#cdd6f4"
+            }
+        },
+        "blender_orange": {
+            "name": "Blender Оранжевая",
+            "description": "В стиле Blender 3D — тёмно-серая с оранжевыми акцентами",
+            "colors": {
+                "bg_color": "#282828",
+                "fg_color": "#f0f0f0",
+                "accent_color": "#ff8c00",
+                "success_color": "#7cb518",
+                "warning_color": "#ffb347",
+                "error_color": "#e63946",
+                "info_color": "#ff8c00",
+                "frame_bg": "#3c3c3c",
+                "button_hover": "#4a4a4a",
+                "timer_running_color": "#7cb518",
+                "timer_stopped_color": "#b0b0b0"
+            }
+        },
+        "dark_modern": {
+            "name": "Тёмная Современная",
+            "description": "Современная тёмная тема с неоновыми акцентами",
+            "colors": {
+                "bg_color": "#0a0a0a",
+                "fg_color": "#e0e0e0",
+                "accent_color": "#00adb5",
+                "success_color": "#00ff9d",
+                "warning_color": "#ffb347",
+                "error_color": "#ff2e2e",
+                "info_color": "#00adb5",
+                "frame_bg": "#1a1a1a",
+                "button_hover": "#2a2a2a",
+                "timer_running_color": "#00ff9d",
+                "timer_stopped_color": "#888888"
+            }
+        },
+        "light_clean": {
+            "name": "Светлая Чистая",
+            "description": "Светлая минималистичная тема для дневной работы",
+            "colors": {
+                "bg_color": "#f5f5f5",
+                "fg_color": "#2d2d2d",
+                "accent_color": "#4a90e2",
+                "success_color": "#2ecc71",
+                "warning_color": "#f39c12",
+                "error_color": "#e74c3c",
+                "info_color": "#4a90e2",
+                "frame_bg": "#ffffff",
+                "button_hover": "#e0e0e0",
+                "timer_running_color": "#27ae60",
+                "timer_stopped_color": "#7f8d8d"
+            }
+        },
+        "purple_night": {
+            "name": "Фиолетовая Ночь",
+            "description": "Фиолетовая ночная тема для творческой атмосферы",
+            "colors": {
+                "bg_color": "#1a0b2e",
+                "fg_color": "#e0b0ff",
+                "accent_color": "#9b59b6",
+                "success_color": "#2ecc71",
+                "warning_color": "#f1c40f",
+                "error_color": "#e74c3c",
+                "info_color": "#9b59b6",
+                "frame_bg": "#2c1a4a",
+                "button_hover": "#3a2a5a",
+                "timer_running_color": "#2ecc71",
+                "timer_stopped_color": "#b07ce0"
+            }
+        }
+    },
+    "default_theme": "blender_orange"
+}

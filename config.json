@@ -1,0 +1,23 @@
+{
+    "db_folder": "planner_data",
+    "db_file": "planner_data/projects.db",
+    "blender_files_path": "",
+    "blender_executable": "",
+    "selected_blender_path": "",
+    "blender_custom_paths": [],
+    "auto_save_interval": 30,
+    "current_theme": "blender_orange",
+    "last_save_path": "",
+    "monitor_paths": [
+        "~/Documents",
+        "~/Documents/blender",
+        "~/Desktop",
+        "~/Downloads"
+    ],
+    "blend_files_search_paths": [
+        "~/Documents",
+        "~/Documents/blender",
+        "~/Desktop"
+    ],
+    "tray_configured": true
+}

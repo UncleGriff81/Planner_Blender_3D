@@ -294,14 +294,35 @@ def minimize_to_tray():
 
 
 def on_closing():
-    """Закрытие программы"""
-    global auto_saver, projects_objects_list, root
+    """Закрытие программы с проверкой активных таймеров"""
+    from tkinter import messagebox
+    
+    # Проверяем, есть ли активные таймеры
+    active_projects = [p for p in projects_objects_list if p.timer_running]
+    
+    if active_projects:
+        # Формируем список проектов с активными таймерами
+        project_names = "\n".join([f"  • {p.name}" for p in active_projects])
+        
+        # Показываем предупреждение
+        result = messagebox.askyesno(
+            "⚠️ Активные таймеры",
+            f"Обнаружены проекты с активными таймерами:\n\n{project_names}\n\n"
+            f"⚠️ ВНИМАНИЕ: Blender всё ещё открыт с этими файлами!\n\n"
+            f"Если вы закроете программу сейчас, текущее время работы НЕ БУДЕТ СОХРАНЕНО,\n"
+            f"так как сессия работы ещё не завершена.\n\n"
+            f"Рекомендуется сначала закрыть файлы в Blender или остановить таймеры.\n\n"
+            f"Всё равно закрыть программу?",
+            icon='warning'
+        )
+        
+        if not result:
+            return  # Отмена закрытия
+    
+    # Закрываем программу
     print("[INFO] Закрытие программы...")
     if auto_saver:
         auto_saver.stop()
-    for project in projects_objects_list:
-        if project.timer_running:
-            project.stop_timer()
     root.destroy()
 
 

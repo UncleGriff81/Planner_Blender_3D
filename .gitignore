@@ -1,0 +1,23 @@
+# Временные файлы сборки
+build/
+dist/
+Output/
+*.spec
+*.c
+*.pyd
+__pycache__/
+*.pyc
+
+# Файлы IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Системные файлы
+Thumbs.db
+.DS_Store
+
+# Логи и временные файлы
+*.log
+*.tmp

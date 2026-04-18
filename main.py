@@ -22,6 +22,7 @@ from monitors.file_monitor_starter import start_file_monitoring
 from monitors.process_monitor_starter import start_process_monitoring
 from dialogs.create_project_dialog import create_project_dialog
 from dialogs.feedback_dialog import show_feedback_form
+from dialogs.donate_dialog import show_donate_form
 from theme_manager import ThemeManager
 from auto_saver import AutoSaver
 from path_utils import load_config
@@ -36,6 +37,7 @@ HEIGHT = 600
 TITLE = "Planner_Blender_3D"
 CURRENT_VERSION = "1.0.1"
 TARGET_EMAIL = "bobikovd81@gmail.com"  # Почта разработчика (неизменна)
+DONATE_WALLET_NUMBER = "4100119516146919"  # Номер кошелька ЮMoney (ЗАМЕНИТЕ НА СВОЙ!)
 
 # Глобальные переменные
 root = None
@@ -116,10 +118,13 @@ def setup_main_window():
     main_container = tk.Frame(root, bg=theme.get("bg_color"))
     main_container.pack(fill="both", expand=True)
     
-    # Верхняя панель
-    _top_panel = create_top_panel(main_container, root, theme, 
-                                 lambda: show_feedback_form(root, theme, TARGET_EMAIL, CURRENT_VERSION), 
-                                 CURRENT_VERSION)
+    # Верхняя панель (теперь возвращает панель и метку разработчиков)
+    _top_panel, developers_label = create_top_panel(
+        main_container, root, theme, 
+        lambda: show_feedback_form(root, theme, TARGET_EMAIL, CURRENT_VERSION),
+        lambda: show_donate_form(root, theme, DONATE_WALLET_NUMBER),
+        CURRENT_VERSION
+    )
     _top_panel.grid(row=0, column=0, columnspan=2, pady=(5, 5), sticky="ew")
     
     # Разделитель
@@ -149,7 +154,7 @@ def setup_main_window():
     _theme_container = tk.Frame(main_container, bg=theme.get("bg_color"))
     _theme_container.grid(row=3, column=1, sticky="e", padx=10, pady=(0, 15))
     
-    _theme_frame, _theme_dropdown, _info_btn, developers_label = create_theme_selector(_theme_container, theme, theme_manager, refresh_ui)
+    _theme_frame, _theme_dropdown, _info_btn, _ = create_theme_selector(_theme_container, theme, theme_manager, refresh_ui)
     _theme_frame.pack(side="right")
     
     # Контейнер с проектами
@@ -317,7 +322,7 @@ def on_closing():
         )
         
         if not result:
-            return  # Отмена закрытия
+            return
     
     # Закрываем программу
     print("[INFO] Закрытие программы...")

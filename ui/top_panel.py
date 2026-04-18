@@ -1,11 +1,11 @@
 """
-Верхняя панель с логотипом, версией и ссылкой "Разработчикам"
+Верхняя панель с логотипом, версией и двумя кнопками
 """
 import tkinter as tk
 import os
 
 
-def create_top_panel(parent, root, theme, feedback_callback, current_version):
+def create_top_panel(parent, root, theme, feedback_callback, donate_callback, current_version):
     """Создаёт верхнюю панель"""
     top_panel = tk.Frame(parent, bg=theme.get("bg_color"))
     
@@ -20,30 +20,6 @@ def create_top_panel(parent, root, theme, feedback_callback, current_version):
     version_label = tk.Label(corner_frame, text=f"  v{current_version}", font=("Arial", 8), 
                              bg=theme.get("bg_color"), fg="gray")
     version_label.pack(side="left")
-    
-    # Правый угол (Разработчикам)
-    right_corner_frame = tk.Frame(top_panel, bg=theme.get("bg_color"))
-    right_corner_frame.pack(side="right", anchor="ne", padx=(0, 10))
-    
-    developers_label = tk.Label(
-        right_corner_frame, 
-        text="Разработчикам", 
-        font=("Arial", 8, "underline"), 
-        bg=theme.get("bg_color"), 
-        fg=theme.get("accent_color"),
-        cursor="hand2"
-    )
-    developers_label.pack(side="right")
-    developers_label.bind("<Button-1>", lambda e: feedback_callback())
-    
-    def on_enter(event):
-        developers_label.config(fg=theme.get("info_color"))
-    
-    def on_leave(event):
-        developers_label.config(fg=theme.get("accent_color"))
-    
-    developers_label.bind("<Enter>", on_enter)
-    developers_label.bind("<Leave>", on_leave)
     
     # Левая панель с логотипом
     left_frame = tk.Frame(top_panel, bg=theme.get("bg_color"))
@@ -78,4 +54,56 @@ def create_top_panel(parent, root, theme, feedback_callback, current_version):
                                bg=theme.get("bg_color"), fg=theme.get("fg_color"))
         title_label.pack(side="top")
     
-    return top_panel
+    # Правый угол (две кнопки: Поддержать проект и Разработчикам)
+    right_corner_frame = tk.Frame(top_panel, bg=theme.get("bg_color"))
+    right_corner_frame.pack(side="right", anchor="ne", padx=(0, 10))
+    
+    # Кнопка "Поддержать проект" (с сердечком)
+    donate_label = tk.Label(
+        right_corner_frame, 
+        text="❤️ Поддержать проект", 
+        font=("Arial", 8, "underline"), 
+        bg=theme.get("bg_color"), 
+        fg=theme.get("accent_color"),
+        cursor="hand2"
+    )
+    donate_label.pack(side="right", padx=(10, 0))
+    donate_label.bind("<Button-1>", lambda e: donate_callback())
+    
+    # Разделитель (просто пробел)
+    separator_label = tk.Label(right_corner_frame, text=" | ", font=("Arial", 8),
+                               bg=theme.get("bg_color"), fg=theme.get("fg_color"))
+    separator_label.pack(side="right")
+    
+    # Кнопка "Разработчикам"
+    developers_label = tk.Label(
+        right_corner_frame, 
+        text="Разработчикам", 
+        font=("Arial", 8, "underline"), 
+        bg=theme.get("bg_color"), 
+        fg=theme.get("accent_color"),
+        cursor="hand2"
+    )
+    developers_label.pack(side="right")
+    developers_label.bind("<Button-1>", lambda e: feedback_callback())
+    
+    # Эффекты наведения для обеих кнопок
+    def on_enter_donate(event):
+        donate_label.config(fg=theme.get("info_color"))
+    
+    def on_leave_donate(event):
+        donate_label.config(fg=theme.get("accent_color"))
+    
+    def on_enter_developers(event):
+        developers_label.config(fg=theme.get("info_color"))
+    
+    def on_leave_developers(event):
+        developers_label.config(fg=theme.get("accent_color"))
+    
+    donate_label.bind("<Enter>", on_enter_donate)
+    donate_label.bind("<Leave>", on_leave_donate)
+    developers_label.bind("<Enter>", on_enter_developers)
+    developers_label.bind("<Leave>", on_leave_developers)
+    
+    # Возвращаем панель и метку разработчиков (для обновления темы)
+    return top_panel, developers_label

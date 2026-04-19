@@ -4,12 +4,48 @@
 import tkinter as tk
 
 
-def create_filter_panel(parent, theme, refresh_callback):
-    """Создаёт панель с сортировкой и фильтрацией"""
-    filter_frame = tk.Frame(parent, bg=theme.get("bg_color"))
-    filter_frame.grid(row=2, column=0, columnspan=2, pady=(0, 10), sticky="ew", padx=10)
+class ToolTip:
+    """Всплывающая подсказка для виджетов"""
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tip_window = None
+        widget.bind('<Enter>', self.show_tip)
+        widget.bind('<Leave>', self.hide_tip)
     
-    sort_label = tk.Label(filter_frame, text="Сортировка:", font=("Arial", 10), 
+    def show_tip(self, event=None):
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+        
+        self.tip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        
+        label = tk.Label(tw, text=self.text, justify=tk.LEFT,
+                         background="#ffffe0", relief=tk.SOLID, borderwidth=1,
+                         font=("Arial", 9))
+        label.pack()
+    
+    def hide_tip(self, event=None):
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
+
+
+def create_filter_panel(parent, theme, refresh_callback, search_callback=None):
+    """Создаёт панель с сортировкой, фильтрацией и поиском"""
+    filter_frame = tk.Frame(parent, bg=theme.get("bg_color"))
+    
+    # ===== КОНТЕЙНЕР ДЛЯ СОДЕРЖИМОГО =====
+    content_frame = tk.Frame(filter_frame, bg=theme.get("bg_color"))
+    content_frame.pack(fill="x")
+    
+    # ===== ЛЕВАЯ ЧАСТЬ: Сортировка и галочка =====
+    left_frame = tk.Frame(content_frame, bg=theme.get("bg_color"))
+    left_frame.pack(side="left")
+    
+    sort_label = tk.Label(left_frame, text="Сортировка:", font=("Arial", 10),
                           bg=theme.get("bg_color"), fg=theme.get("fg_color"))
     sort_label.pack(side="left", padx=(0, 10))
     
@@ -23,21 +59,61 @@ def create_filter_panel(parent, theme, refresh_callback):
         ("🔤 По названию (Я-А)", "name_desc"),
     ]
     
-    sort_menu = tk.OptionMenu(filter_frame, sort_var, *[opt[1] for opt in sort_options], 
+    sort_menu = tk.OptionMenu(left_frame, sort_var, *[opt[1] for opt in sort_options],
                               command=lambda x: refresh_callback())
-    sort_menu.config(bg=theme.get("accent_color"), fg="white", relief="flat", 
+    sort_menu.config(bg=theme.get("accent_color"), fg="white", relief="flat",
                      font=("Arial", 9), width=20)
     sort_menu.pack(side="left", padx=(0, 20))
     
+    # Чекбокс срочных проектов (без текста, только квадратик)
     urgent_var = tk.BooleanVar(value=False)
-    urgent_check = tk.Checkbutton(filter_frame, text="Показать срочные проекты (менее 48 часов)",
-                                  variable=urgent_var, command=lambda: refresh_callback(),
-                                  bg=theme.get("bg_color"), fg=theme.get("fg_color"), 
+    urgent_check = tk.Checkbutton(left_frame, variable=urgent_var, command=refresh_callback,
+                                  bg=theme.get("bg_color"), fg=theme.get("fg_color"),
                                   selectcolor=theme.get("bg_color"))
-    urgent_check.pack(side="left", padx=(0, 20))
+    urgent_check.pack(side="left", padx=(0, 5))
     
-    refresh_btn = tk.Button(filter_frame, text="🔄 Обновить", command=refresh_callback,
-                            bg=theme.get("info_color"), fg="white", relief="flat", font=("Arial", 9))
-    refresh_btn.pack(side="right")
+    ToolTip(urgent_check, "Показать только проекты с дедлайном менее 48 часов")
     
-    return filter_frame, sort_var, urgent_var
+    # ===== ЦЕНТР: Кнопка обновления =====
+    center_frame = tk.Frame(content_frame, bg=theme.get("bg_color"))
+    center_frame.pack(side="left", expand=True)
+    
+    refresh_btn = tk.Button(center_frame, text="🔄 Обновить", command=refresh_callback,
+                            bg=theme.get("info_color"), fg="white", relief="flat",
+                            font=("Arial", 9), padx=15)
+    refresh_btn.pack()
+    
+    # ===== ПРАВАЯ ЧАСТЬ: Поиск =====
+    right_frame = tk.Frame(content_frame, bg=theme.get("bg_color"))
+    right_frame.pack(side="right")
+    
+    search_frame = tk.Frame(right_frame, bg=theme.get("bg_color"))
+    search_frame.pack()
+    
+    tk.Label(search_frame, text="🔍 Поиск:", font=("Arial", 10),
+             bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(side="left", padx=(0, 5))
+    
+    search_var = tk.StringVar()
+    search_entry = tk.Entry(search_frame, textvariable=search_var, font=("Arial", 10),
+                            bg=theme.get("frame_bg"), fg=theme.get("fg_color"),
+                            insertbackground=theme.get("fg_color"), width=25)
+    search_entry.pack(side="left", padx=(0, 5))
+    
+    def on_search(*args):
+        if search_callback:
+            search_callback(search_var.get())
+    
+    search_var.trace_add("write", on_search)
+    
+    def clear_search():
+        search_var.set("")
+        search_entry.focus()
+    
+    clear_btn = tk.Button(search_frame, text="Очистить", font=("Arial", 9),
+                          bg=theme.get("info_color"), fg="white", relief="flat",
+                          command=clear_search)
+    clear_btn.pack(side="left")
+    
+    ToolTip(search_entry, "Поиск по названию и описанию проекта")
+    
+    return filter_frame, sort_var, urgent_var, search_var

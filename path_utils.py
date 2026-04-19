@@ -10,6 +10,7 @@ from tkinter import filedialog, messagebox
 _DATA_FOLDER_PATH = None
 _FIRST_RUN_CHECK = None
 
+
 def get_first_run_flag_path():
     """Возвращает путь к файлу-флагу первого запуска"""
     if getattr(sys, 'frozen', False):
@@ -17,6 +18,7 @@ def get_first_run_flag_path():
     else:
         base_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_dir, ".first_run_done")
+
 
 def is_first_run():
     """Проверяет, первый ли это запуск программы"""
@@ -28,6 +30,7 @@ def is_first_run():
     _FIRST_RUN_CHECK = not os.path.exists(flag_file)
     return _FIRST_RUN_CHECK
 
+
 def mark_first_run_done():
     """Отмечает, что первый запуск завершён"""
     flag_file = get_first_run_flag_path()
@@ -37,6 +40,7 @@ def mark_first_run_done():
         print(f"[DATA] Первый запуск завершён, создан флаг: {flag_file}")
     except:
         pass
+
 
 def ask_for_data_folder():
     """Запрашивает у пользователя папку для хранения данных"""
@@ -85,6 +89,7 @@ def ask_for_data_folder():
     
     return folder
 
+
 def get_data_folder():
     """Возвращает путь к папке-хранилищу"""
     global _DATA_FOLDER_PATH
@@ -119,12 +124,14 @@ def get_data_folder():
     
     return _DATA_FOLDER_PATH
 
+
 def get_db_folder():
     """Возвращает путь к папке с БД"""
     data_folder = get_data_folder()
     db_folder = os.path.join(data_folder, "database")
     os.makedirs(db_folder, exist_ok=True)
     return db_folder
+
 
 def get_reports_folder():
     """Возвращает путь к папке с отчётами"""
@@ -133,9 +140,11 @@ def get_reports_folder():
     os.makedirs(reports_folder, exist_ok=True)
     return reports_folder
 
+
 def get_config_path():
     """Возвращает путь к config.json"""
     return os.path.join(get_data_folder(), "config.json")
+
 
 def load_config():
     """Загружает конфиг из папки-хранилища"""
@@ -167,8 +176,33 @@ def load_config():
             json.dump(default_config, f, indent=4, ensure_ascii=False)
         return default_config
 
+
 def save_config(config):
     """Сохраняет конфиг в папку-хранилище"""
     config_path = get_config_path()
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=4, ensure_ascii=False)
+
+
+# ========== ФУНКЦИИ ДЛЯ УВЕДОМЛЕНИЙ О ДЕДЛАЙНАХ ==========
+
+def get_dont_show_deadline_today():
+    """Возвращает дату, когда было нажато 'Больше не показывать сегодня'"""
+    config = load_config()
+    return config.get('dont_show_deadline_date', '')
+
+
+def set_dont_show_deadline_today():
+    """Устанавливает сегодняшнюю дату как день, когда не нужно показывать уведомления"""
+    import datetime
+    config = load_config()
+    config['dont_show_deadline_date'] = datetime.datetime.now().strftime('%Y-%m-%d')
+    save_config(config)
+
+
+def should_show_deadline_notification():
+    """Проверяет, нужно ли показывать уведомление о дедлайнах сегодня"""
+    import datetime
+    last_shown = get_dont_show_deadline_today()
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    return last_shown != today

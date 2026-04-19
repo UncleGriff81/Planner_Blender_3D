@@ -1,5 +1,5 @@
 """
-Обработчики проектов: сортировка, обновление, нумерация
+Обработчики проектов: сортировка, обновление, нумерация, поиск
 """
 import tkinter as tk
 from date_utils import get_deadline_color
@@ -19,8 +19,26 @@ def renumber_projects(task_frames_list):
                 break
 
 
-def sort_projects(projects, sort_key, urgent_only=False):
-    """Сортирует проекты по заданному ключу"""
+def filter_projects_by_search(projects, search_text):
+    """Фильтрует проекты по поисковому запросу (название + описание)"""
+    if not search_text or not search_text.strip():
+        return projects
+    
+    search_lower = search_text.lower().strip()
+    filtered = []
+    for project in projects:
+        if (search_lower in project.name.lower() or 
+            search_lower in project.description.lower()):
+            filtered.append(project)
+    return filtered
+
+
+def sort_projects(projects, sort_key, urgent_only=False, search_text=""):
+    """Сортирует и фильтрует проекты"""
+    # Сначала фильтруем по поиску
+    projects = filter_projects_by_search(projects, search_text)
+    
+    # Потом фильтруем по срочности
     if urgent_only:
         filtered = []
         for p in projects:
@@ -29,6 +47,7 @@ def sort_projects(projects, sort_key, urgent_only=False):
                 filtered.append(p)
         projects = filtered
     
+    # Сортируем
     if sort_key == "date_desc":
         return sorted(projects, key=lambda p: p.creation_date, reverse=True)
     elif sort_key == "date_asc":
@@ -45,9 +64,9 @@ def sort_projects(projects, sort_key, urgent_only=False):
         return projects
 
 
-def refresh_projects_list(projects_inner_frame, projects_objects_list, task_frames_list, 
-                          sort_var, urgent_var, canvas, create_task_frame_func):
-    """Обновляет список проектов в UI"""
+def refresh_projects_list(projects_inner_frame, projects_objects_list, task_frames_list,
+                          sort_var, urgent_var, canvas, search_var, create_task_frame_func):
+    """Обновляет список проектов в UI с учётом поиска"""
     if projects_inner_frame is None:
         return
     
@@ -59,10 +78,12 @@ def refresh_projects_list(projects_inner_frame, projects_objects_list, task_fram
     
     sort_key = sort_var.get() if sort_var else "deadline_asc"
     urgent = urgent_var.get() if urgent_var else False
-    sorted_projects = sort_projects(projects_objects_list, sort_key, urgent)
+    search_text = search_var.get() if search_var else ""
+    
+    sorted_projects = sort_projects(projects_objects_list, sort_key, urgent, search_text)
     
     for project in sorted_projects:
-        task_frame = create_task_frame_func(projects_inner_frame, project, task_frames_list, 
+        task_frame = create_task_frame_func(projects_inner_frame, project, task_frames_list,
                                             lambda: renumber_projects(task_frames_list))
         task_frame.pack(fill="x", pady=(5, 5), padx=5)
         task_frames_list.append(task_frame)

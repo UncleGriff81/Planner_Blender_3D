@@ -1,5 +1,5 @@
 """
-Диалог создания нового проекта
+Диалог создания нового проекта (с поддержкой выбора существующего .blend файла)
 """
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -25,23 +25,68 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     dialog.grab_set()
     
     dialog.update_idletasks()
-    width = 620
-    height = 780
+    width = 650
+    height = 800
     x = (dialog.winfo_screenwidth() // 2) - (width // 2)
     y = (dialog.winfo_screenheight() // 2) - (height // 2)
     dialog.geometry(f"{width}x{height}+{x}+{y}")
     dialog.resizable(False, False)
     
-    main_frame = tk.Frame(dialog, bg=theme.get("bg_color"))
-    main_frame.pack(fill="both", expand=True, padx=25, pady=20)
+    # Основной контейнер с прокруткой (на случай, если содержимое не помещается)
+    main_canvas = tk.Canvas(dialog, bg=theme.get("bg_color"), highlightthickness=0)
+    scrollbar = tk.Scrollbar(dialog, orient="vertical", command=main_canvas.yview)
+    main_canvas.configure(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side="right", fill="y")
+    main_canvas.pack(side="left", fill="both", expand=True)
     
+    main_frame = tk.Frame(main_canvas, bg=theme.get("bg_color"))
+    main_canvas.create_window((0, 0), window=main_frame, anchor="nw")
+    
+    def configure_scroll_region(event):
+        main_canvas.configure(scrollregion=main_canvas.bbox("all"))
+    
+    main_frame.bind("<Configure>", configure_scroll_region)
+    
+    # Используем grid для фиксации порядка
+    row = 0
+    
+    # Заголовок
     tk.Label(main_frame, text="➕ Создание нового проекта", 
              font=("Arial", 14, "bold"),
-             bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(pady=(0, 20))
+             bg=theme.get("bg_color"), fg=theme.get("fg_color")).grid(row=row, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+    row += 1
     
-    # --- Поле: Название проекта ---
+    # ===== 1. СПОСОБ СОЗДАНИЯ =====
+    creation_type_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
+    creation_type_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 15))
+    
+    tk.Label(creation_type_frame, text="📌 Способ создания:", font=("Arial", 11),
+             bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(anchor="w", pady=(0, 5))
+    
+    creation_type_var = tk.StringVar(value="new")
+    
+    new_file_radio = tk.Radiobutton(creation_type_frame, text="Создать новый .blend файл", 
+                                    variable=creation_type_var, value="new",
+                                    bg=theme.get("bg_color"), fg=theme.get("fg_color"),
+                                    selectcolor=theme.get("bg_color"))
+    new_file_radio.pack(anchor="w", padx=20)
+    
+    existing_file_radio = tk.Radiobutton(creation_type_frame, text="Использовать существующий .blend файл", 
+                                         variable=creation_type_var, value="existing",
+                                         bg=theme.get("bg_color"), fg=theme.get("fg_color"),
+                                         selectcolor=theme.get("bg_color"))
+    existing_file_radio.pack(anchor="w", padx=20)
+    
+    row += 1
+    
+    # Разделитель
+    separator1 = tk.Frame(main_frame, height=1, bg=theme.get("accent_color"))
+    separator1.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 15))
+    row += 1
+    
+    # ===== 2. НАЗВАНИЕ ПРОЕКТА =====
     name_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    name_frame.pack(fill="x", pady=(0, 15))
+    name_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
     
     name_label = tk.Label(name_frame, text="📌 Название проекта:", font=("Arial", 11),
                           bg=theme.get("bg_color"), fg=theme.get("fg_color"))
@@ -58,10 +103,11 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     name_status = tk.Label(name_frame, text="Название проекта не указано", font=("Arial", 9),
                            bg=theme.get("bg_color"), fg="orange")
     name_status.pack(anchor="w", pady=(2, 0))
+    row += 1
     
-    # --- Поле: Описание ---
+    # ===== 3. ОПИСАНИЕ ПРОЕКТА =====
     desc_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    desc_frame.pack(fill="x", pady=(0, 15))
+    desc_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
     
     tk.Label(desc_frame, text="📝 Описание проекта:", font=("Arial", 11),
              bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(anchor="w")
@@ -74,69 +120,17 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     desc_status = tk.Label(desc_frame, text="Описание проекта не указано", font=("Arial", 9),
                            bg=theme.get("bg_color"), fg="orange")
     desc_status.pack(anchor="w", pady=(2, 0))
+    row += 1
     
-    # --- Поле: Выбор версии Blender ---
-    blender_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    blender_frame.pack(fill="x", pady=(0, 15))
+    # ===== 4. КОНТЕЙНЕРЫ ДЛЯ ФАЙЛОВ (оба всегда на месте, но один скрыт) =====
     
-    blender_label_title = tk.Label(blender_frame, text="🔧 Версия Blender:", font=("Arial", 11),
-                                   bg=theme.get("bg_color"), fg=theme.get("fg_color"))
-    blender_label_title.pack(anchor="w")
-    tk.Label(blender_frame, text=" *", font=("Arial", 11, "bold"),
-             bg=theme.get("bg_color"), fg="orange").place(in_=blender_label_title, x=blender_label_title.winfo_reqwidth() + 2, y=0)
+    # Контейнер для нового файла
+    new_file_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
+    new_file_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
     
-    blender_select_frame = tk.Frame(blender_frame, bg=theme.get("bg_color"))
-    blender_select_frame.pack(fill="x", pady=(5, 0))
-    
-    blender_var = tk.StringVar()
-    blender_path_map = {}
-    
-    if available_versions:
-        blender_options = []
-        for v in available_versions:
-            display = f"{v['version_str']} - {os.path.basename(os.path.dirname(v['path']))}"
-            blender_options.append((display, v['path']))
-        
-        blender_dropdown = tk.OptionMenu(blender_select_frame, blender_var, *[opt[0] for opt in blender_options])
-        blender_dropdown.config(bg=theme.get("frame_bg"), fg=theme.get("fg_color"),
-                                relief="flat", width=45)
-        blender_dropdown.pack(side="left", fill="x", expand=True)
-        
-        blender_path_map = {opt[0]: opt[1] for opt in blender_options}
-        
-        if blender_options:
-            default_display = blender_options[0][0]
-            blender_var.set(default_display)
-    else:
-        blender_entry = tk.Entry(blender_select_frame, font=("Arial", 10),
-                                 bg=theme.get("frame_bg"), fg=theme.get("fg_color"),
-                                 insertbackground=theme.get("fg_color"))
-        blender_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
-        
-        def browse_blender():
-            path = filedialog.askopenfilename(
-                title="Выберите исполняемый файл Blender",
-                filetypes=[("Executable", "blender.exe"), ("All files", "*.*")],
-                parent=dialog
-            )
-            if path:
-                blender_entry.delete(0, tk.END)
-                blender_entry.insert(0, path)
-                blender_var.set(path)
-                blender_status.config(text="✅", fg=theme.get("success_color"))
-        
-        blender_btn = tk.Button(blender_select_frame, text="📁 Обзор",
-                                bg=theme.get("accent_color"), fg="white",
-                                relief="flat", command=browse_blender)
-        blender_btn.pack(side="right")
-    
-    blender_status = tk.Label(blender_frame, text="⚠️ Выберите Blender", font=("Arial", 9),
-                              bg=theme.get("bg_color"), fg="orange")
-    blender_status.pack(anchor="w", pady=(2, 0))
-    
-    # --- Поле: Имя файла ---
-    filename_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    filename_frame.pack(fill="x", pady=(0, 15))
+    # Имя файла
+    filename_frame = tk.Frame(new_file_frame, bg=theme.get("bg_color"))
+    filename_frame.pack(fill="x", pady=(0, 12))
     
     filename_label = tk.Label(filename_frame, text="📁 Имя файла (.blend):", font=("Arial", 11),
                               bg=theme.get("bg_color"), fg=theme.get("fg_color"))
@@ -153,9 +147,9 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
                                bg=theme.get("bg_color"), fg="orange")
     filename_status.pack(anchor="w", pady=(2, 0))
     
-    # --- Поле: Выбор папки ---
-    folder_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    folder_frame.pack(fill="x", pady=(0, 15))
+    # Папка сохранения
+    folder_frame = tk.Frame(new_file_frame, bg=theme.get("bg_color"))
+    folder_frame.pack(fill="x", pady=(0, 12))
     
     folder_label = tk.Label(folder_frame, text="📂 Папка сохранения:", font=("Arial", 11),
                             bg=theme.get("bg_color"), fg=theme.get("fg_color"))
@@ -193,9 +187,143 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
                                    font=("Arial", 9), bg=theme.get("bg_color"), fg="orange")
     folder_status_label.pack(anchor="w", pady=(2, 0))
     
-    # --- Поле: Дедлайн ---
+    # Контейнер для существующего файла
+    existing_file_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
+    existing_file_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
+    
+    existing_file_select_frame = tk.Frame(existing_file_frame, bg=theme.get("bg_color"))
+    existing_file_select_frame.pack(fill="x", pady=(0, 12))
+    
+    tk.Label(existing_file_select_frame, text="📂 Выберите существующий .blend файл:", font=("Arial", 11),
+             bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(anchor="w")
+    
+    existing_file_path_var = tk.StringVar()
+    existing_file_entry = tk.Entry(existing_file_select_frame, textvariable=existing_file_path_var,
+                                    font=("Arial", 10), state="readonly",
+                                    bg=theme.get("frame_bg"), fg=theme.get("fg_color"),
+                                    readonlybackground=theme.get("frame_bg"))
+    existing_file_entry.pack(fill="x", pady=(5, 0))
+    
+    def choose_existing_file():
+        file_path = filedialog.askopenfilename(
+            title="Выберите существующий .blend файл",
+            filetypes=[("Blender files", "*.blend"), ("All files", "*.*")],
+            parent=dialog
+        )
+        if file_path:
+            file_path = os.path.normpath(file_path)
+            existing_file_path_var.set(file_path)
+            existing_file_status.config(text="✅ Файл выбран", fg=theme.get("success_color"))
+            
+            # Предлагаем имя проекта из имени файла
+            suggested_name = os.path.splitext(os.path.basename(file_path))[0]
+            if not name_entry.get().strip():
+                name_entry.delete(0, tk.END)
+                name_entry.insert(0, suggested_name)
+                name_status.config(text="✅", fg=theme.get("success_color"))
+    
+    existing_file_browse_btn = tk.Button(existing_file_select_frame, text="📁 Обзор",
+                                          bg=theme.get("accent_color"), fg="white",
+                                          relief="flat", command=choose_existing_file)
+    existing_file_browse_btn.pack(pady=(5, 0))
+    
+    existing_file_status = tk.Label(existing_file_select_frame, text="Файл не выбран", 
+                                     font=("Arial", 9), bg=theme.get("bg_color"), fg="orange")
+    existing_file_status.pack(anchor="w", pady=(2, 0))
+    
+    existing_file_info = tk.Label(existing_file_select_frame, text="", 
+                                   font=("Arial", 8), bg=theme.get("bg_color"), fg="gray")
+    existing_file_info.pack(anchor="w", pady=(2, 0))
+    
+    # Функция обновления информации о выбранном файле
+    def update_existing_file_info(*args):
+        file_path = existing_file_path_var.get()
+        if file_path and os.path.exists(file_path):
+            size_mb = os.path.getsize(file_path) / (1024 * 1024)
+            modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%d.%m.%Y %H:%M')
+            existing_file_info.config(text=f"Размер: {size_mb:.1f} МБ | Изменён: {modified}")
+        else:
+            existing_file_info.config(text="")
+    
+    existing_file_path_var.trace_add("write", update_existing_file_info)
+    
+    # Функция переключения видимости (оба фрейма уже на своих местах, просто скрываем/показываем)
+    def toggle_creation_type(*args):
+        if creation_type_var.get() == "new":
+            new_file_frame.grid()
+            existing_file_frame.grid_remove()
+        else:
+            new_file_frame.grid_remove()
+            existing_file_frame.grid()
+    
+    creation_type_var.trace_add("write", toggle_creation_type)
+    toggle_creation_type()  # Инициализация
+    
+    row += 1
+    
+    # ===== 5. ВЕРСИЯ BLENDER =====
+    blender_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
+    blender_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 15))
+    
+    blender_label_title = tk.Label(blender_frame, text="🔧 Версия Blender:", font=("Arial", 11),
+                                   bg=theme.get("bg_color"), fg=theme.get("fg_color"))
+    blender_label_title.pack(anchor="w")
+    tk.Label(blender_frame, text=" *", font=("Arial", 11, "bold"),
+             bg=theme.get("bg_color"), fg="orange").place(in_=blender_label_title, x=blender_label_title.winfo_reqwidth() + 2, y=0)
+    
+    blender_select_frame = tk.Frame(blender_frame, bg=theme.get("bg_color"))
+    blender_select_frame.pack(fill="x", pady=(5, 0))
+    
+    blender_var = tk.StringVar()
+    blender_path_map = {}
+    
+    if available_versions:
+        blender_options = []
+        for v in available_versions:
+            display = f"{v['version_str']} - {os.path.basename(os.path.dirname(v['path']))}"
+            blender_options.append((display, v['path']))
+        
+        blender_dropdown = tk.OptionMenu(blender_select_frame, blender_var, *[opt[0] for opt in blender_options])
+        blender_dropdown.config(bg=theme.get("frame_bg"), fg=theme.get("fg_color"),
+                                relief="flat", width=50)
+        blender_dropdown.pack(side="left", fill="x", expand=True)
+        
+        blender_path_map = {opt[0]: opt[1] for opt in blender_options}
+        
+        if blender_options:
+            default_display = blender_options[0][0]
+            blender_var.set(default_display)
+    else:
+        blender_entry = tk.Entry(blender_select_frame, font=("Arial", 10),
+                                 bg=theme.get("frame_bg"), fg=theme.get("fg_color"),
+                                 insertbackground=theme.get("fg_color"))
+        blender_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        
+        def browse_blender():
+            path = filedialog.askopenfilename(
+                title="Выберите исполняемый файл Blender",
+                filetypes=[("Executable", "blender.exe"), ("All files", "*.*")],
+                parent=dialog
+            )
+            if path:
+                blender_entry.delete(0, tk.END)
+                blender_entry.insert(0, path)
+                blender_var.set(path)
+                blender_status.config(text="✅", fg=theme.get("success_color"))
+        
+        blender_btn = tk.Button(blender_select_frame, text="📁 Обзор",
+                                bg=theme.get("accent_color"), fg="white",
+                                relief="flat", command=browse_blender)
+        blender_btn.pack(side="right")
+    
+    blender_status = tk.Label(blender_frame, text="⚠️ Выберите Blender", font=("Arial", 9),
+                              bg=theme.get("bg_color"), fg="orange")
+    blender_status.pack(anchor="w", pady=(2, 0))
+    row += 1
+    
+    # ===== 6. ДЕДЛАЙН =====
     deadline_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    deadline_frame.pack(fill="x", pady=(0, 15))
+    deadline_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 15))
     
     tk.Label(deadline_frame, text="⏰ Срок выполнения (необязательно):", font=("Arial", 11),
              bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(anchor="w")
@@ -240,10 +368,13 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
                              bg=theme.get("accent_color"), fg="white",
                              relief="flat", command=show_calendar)
     calendar_btn.pack(side="left", padx=2)
+    row += 1
     
+    # ===== 7. КНОПКИ =====
     buttons_frame_dialog = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    buttons_frame_dialog.pack(fill="x", pady=(10, 0))
+    buttons_frame_dialog.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 0))
     
+    # Валидация полей
     def validate_fields():
         valid = True
         
@@ -275,41 +406,38 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
             else:
                 blender_status.config(text="✅", fg=theme.get("success_color"))
         
-        blend_name = filename_entry.get().strip()
-        if not blend_name:
-            filename_status.config(text="⚠️ Имя файла не указано", fg="orange")
-            valid = False
-        else:
-            filename_status.config(text="✅", fg=theme.get("success_color"))
-        
-        folder = folder_path_var.get()
-        if not folder:
-            folder_status_label.config(text="⚠️ Папка не выбрана", fg="orange")
-            valid = False
-        else:
-            if folder_status_label.cget("text") != "✅ Папка выбрана":
+        if creation_type_var.get() == "new":
+            blend_name = filename_entry.get().strip()
+            if not blend_name:
+                filename_status.config(text="⚠️ Имя файла не указано", fg="orange")
+                valid = False
+            else:
+                filename_status.config(text="✅", fg=theme.get("success_color"))
+            
+            folder = folder_path_var.get()
+            if not folder:
+                folder_status_label.config(text="⚠️ Папка не выбрана", fg="orange")
+                valid = False
+            else:
                 folder_status_label.config(text="✅ Папка выбрана", fg=theme.get("success_color"))
+        else:
+            file_path = existing_file_path_var.get()
+            if not file_path or not os.path.exists(file_path):
+                existing_file_status.config(text="⚠️ Файл не выбран или не существует", fg="orange")
+                valid = False
+            else:
+                existing_file_status.config(text="✅ Файл выбран", fg=theme.get("success_color"))
         
         return valid
     
+    # Создание проекта
     def create_new_project():
         if not validate_fields():
             messagebox.showerror("Ошибка", "Заполните все обязательные поля!", parent=dialog)
             return
         
-        show_notification("⏳ Создание проекта через Blender... Подождите 3-5 секунд", "info", 4000)
-        dialog.update()
-        
         name = name_entry.get().strip()
         description = desc_text.get("1.0", "end-1c").strip()
-        blend_name_raw = filename_entry.get().strip()
-        
-        blend_name_safe = "".join(c for c in blend_name_raw if c.isalnum() or c in (' ', '.', '_')).rstrip()
-        if not blend_name_safe:
-            messagebox.showerror("Ошибка", "Недопустимое имя файла!\nИспользуйте буквы, цифры, пробелы, точки и подчёркивания.", parent=dialog)
-            return
-        
-        selected_folder = folder_path_var.get()
         
         if available_versions:
             selected_display = blender_var.get()
@@ -339,9 +467,71 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
                 pass
         
         creation_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        full_file_path = os.path.join(selected_folder, f"{blend_name_safe}.blend")
-        full_file_path = os.path.normpath(full_file_path)
         
+        if creation_type_var.get() == "new":
+            # Создание нового файла
+            blend_name_raw = filename_entry.get().strip()
+            blend_name_safe = "".join(c for c in blend_name_raw if c.isalnum() or c in (' ', '.', '_')).rstrip()
+            if not blend_name_safe:
+                messagebox.showerror("Ошибка", "Недопустимое имя файла!\nИспользуйте буквы, цифры, пробелы, точки и подчёркивания.", parent=dialog)
+                return
+            
+            selected_folder = folder_path_var.get()
+            full_file_path = os.path.join(selected_folder, f"{blend_name_safe}.blend")
+            full_file_path = os.path.normpath(full_file_path)
+            
+            # Создаём файл через Blender
+            show_notification("⏳ Создание проекта через Blender... Подождите 3-5 секунд", "info", 4000)
+            dialog.update()
+            
+            file_created = False
+            
+            if blender_selected_path and os.path.exists(blender_selected_path):
+                blender_path = os.path.normpath(blender_selected_path)
+                try:
+                    script_content = f'''
+import bpy
+bpy.ops.wm.save_as_mainfile(filepath=r'{full_file_path}')
+'''
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+                        f.write(script_content)
+                        script_path = f.name
+                    
+                    cmd = [blender_path, '--background', '--python', script_path]
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                    
+                    try:
+                        os.unlink(script_path)
+                    except:
+                        pass
+                    
+                    if os.path.exists(full_file_path) and os.path.getsize(full_file_path) > 1024:
+                        file_created = True
+                        print(f"[CREATE] Файл успешно создан через Blender: {full_file_path}")
+                    else:
+                        print(f"[CREATE] Ошибка при создании файла: {result.stderr[:200] if result.stderr else 'неизвестная ошибка'}")
+                except subprocess.TimeoutExpired:
+                    print(f"[CREATE] Таймаут при создании файла")
+                    messagebox.showerror("Ошибка", "Превышено время ожидания при создании файла.\nПроверьте, что Blender запускается корректно.", parent=dialog)
+                    return
+                except Exception as e:
+                    print(f"[CREATE] Исключение при создании файла: {e}")
+                    messagebox.showerror("Ошибка", f"Не удалось создать файл:\n{str(e)}", parent=dialog)
+                    return
+            
+            if not file_created:
+                messagebox.showerror("Ошибка", f"Не удалось создать файл:\n{full_file_path}\n\n"
+                                   "Убедитесь, что выбранная версия Blender работает корректно.", parent=dialog)
+                return
+        else:
+            # Использование существующего файла
+            full_file_path = existing_file_path_var.get()
+            if not os.path.exists(full_file_path):
+                messagebox.showerror("Ошибка", f"Файл не найден:\n{full_file_path}", parent=dialog)
+                return
+            blend_name_safe = os.path.splitext(os.path.basename(full_file_path))[0]
+        
+        # Сохраняем проект в БД
         project_data_for_db = {
             'name': name,
             'description': description,
@@ -372,47 +562,6 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
         
         projects_objects_list.append(new_project_obj)
         auto_saver.add_project(new_project_obj)
-        
-        # Создание файла через Blender
-        file_created = False
-        
-        if blender_selected_path and os.path.exists(blender_selected_path):
-            blender_path = os.path.normpath(blender_selected_path)
-            try:
-                script_content = f'''
-import bpy
-bpy.ops.wm.save_as_mainfile(filepath=r'{full_file_path}')
-'''
-                with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
-                    f.write(script_content)
-                    script_path = f.name
-                
-                cmd = [blender_path, '--background', '--python', script_path]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-                
-                try:
-                    os.unlink(script_path)
-                except:
-                    pass
-                
-                if os.path.exists(full_file_path) and os.path.getsize(full_file_path) > 1024:
-                    file_created = True
-                    print(f"[CREATE] Файл успешно создан через Blender: {full_file_path}")
-                else:
-                    print(f"[CREATE] Ошибка при создании файла: {result.stderr[:200] if result.stderr else 'неизвестная ошибка'}")
-            except subprocess.TimeoutExpired:
-                print(f"[CREATE] Таймаут при создании файла")
-                messagebox.showerror("Ошибка", "Превышено время ожидания при создании файла.\nПроверьте, что Blender запускается корректно.", parent=dialog)
-                return
-            except Exception as e:
-                print(f"[CREATE] Исключение при создании файла: {e}")
-                messagebox.showerror("Ошибка", f"Не удалось создать файл:\n{str(e)}", parent=dialog)
-                return
-        
-        if not file_created:
-            messagebox.showerror("Ошибка", f"Не удалось создать файл:\n{full_file_path}\n\n"
-                               "Убедитесь, что выбранная версия Blender работает корректно.", parent=dialog)
-            return
         
         refresh_callback()
         update_monitor_callback()

@@ -3,6 +3,8 @@ UI Components - экспорт функций для создания фрейм
 """
 import tkinter as tk
 import os
+import sys
+import subprocess
 from frames.task_frame_header import create_header_frame
 from frames.task_frame_timer import create_timer_frame
 from frames.task_frame_info import create_info_frame
@@ -91,7 +93,7 @@ def create_task_frame(parent_frame, project, task_frames_list=None, renumber_cal
     header_frame, deadline_label, id_label = create_header_frame(proj_frame, frame_bg, theme, project, deadline_color)
     header_frame.pack(fill="x", pady=(0, 8))
     
-    # Панель таймера (возвращает frame, label и label_var)
+    # Панель таймера
     timer_frame, timer_label, timer_label_var = create_timer_frame(proj_frame, frame_bg, theme, project)
     timer_frame.pack(fill="x", pady=(5, 5))
     
@@ -99,11 +101,10 @@ def create_task_frame(parent_frame, project, task_frames_list=None, renumber_cal
     info_frame, blender_label = create_info_frame(proj_frame, frame_bg, theme, project)
     info_frame.pack(fill="x", pady=(8, 0))
     
-    # Монитор процессов
+    # Колбэки
     monitor = get_process_monitor()
     file_path = project.get_full_file_path()
     
-    # Колбэки для файлового монитора
     def on_file_opened(file_path):
         print(f"[UI] Файл открыт, запускаем таймер для проекта {project.id}")
         project.start_timer()
@@ -116,7 +117,6 @@ def create_task_frame(parent_frame, project, task_frames_list=None, renumber_cal
         show_timer_notification("⏸ Таймер остановлен", theme.get("warning_color"))
         force_update(project, proj_frame, header_frame, timer_frame, deadline_label, blender_label, theme)
     
-    # Регистрируем файл в мониторе, если он существует
     if file_path and os.path.exists(file_path):
         monitor.register_file(file_path, on_file_opened, on_file_closed)
     

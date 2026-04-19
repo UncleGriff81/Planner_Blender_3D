@@ -2,6 +2,7 @@
 Колбэки для работы с файлами проекта
 """
 import os
+import sys
 import subprocess
 import tempfile
 from tkinter import filedialog, messagebox
@@ -47,7 +48,11 @@ bpy.ops.wm.save_as_mainfile(filepath=r'{full_path}')
             script_path = f.name
         
         cmd = [blender_path, '--background', '--python', script_path]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        # Запускаем без консоли
+        if sys.platform == "win32":
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30, creationflags=subprocess.CREATE_NO_WINDOW)
+        else:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         
         try:
             os.unlink(script_path)
@@ -72,7 +77,7 @@ bpy.ops.wm.save_as_mainfile(filepath=r'{full_path}')
 
 
 def launch_blender(project, monitor, on_file_opened, on_file_closed, create_blend_file_callback):
-    """Запускает Blender с файлом проекта"""
+    """Запускает Blender с файлом проекта (без консоли)"""
     if not project.blender_path:
         messagebox.showerror("Ошибка", "Сначала выберите версию Blender для этого проекта!\n\n"
                            "Нажмите кнопку '🔧 Выбрать Blender'")
@@ -105,8 +110,16 @@ def launch_blender(project, monitor, on_file_opened, on_file_closed, create_blen
         blender_path = os.path.normpath(project.blender_path)
         file_path = os.path.normpath(file_path)
         
-        subprocess.Popen([blender_path, file_path], shell=False)
+        # Запускаем Blender без консоли на Windows
+        if sys.platform == "win32":
+            subprocess.Popen([blender_path, file_path], shell=False, creationflags=subprocess.CREATE_NO_WINDOW)
+        else:
+            subprocess.Popen([blender_path, file_path], shell=False)
         print(f"[LAUNCH] Запущен Blender с файлом: {file_path}")
+        
+        # Показываем уведомление
+        from notifications.timer_notification import show_timer_notification
+        show_timer_notification("🎨 Blender запущен!", "success")
         
     except Exception as e:
         messagebox.showerror("Ошибка", f"Не удалось запустить Blender:\n{str(e)}")

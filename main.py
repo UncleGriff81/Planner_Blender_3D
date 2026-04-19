@@ -23,21 +23,22 @@ from monitors.process_monitor_starter import start_process_monitoring
 from dialogs.create_project_dialog import create_project_dialog
 from dialogs.feedback_dialog import show_feedback_form
 from dialogs.donate_dialog import show_donate_form
+from dialogs.deadline_notification import show_deadline_notification
 from theme_manager import ThemeManager
 from auto_saver import AutoSaver
-from path_utils import load_config
+from path_utils import load_config, should_show_deadline_notification, set_dont_show_deadline_today
 from db_manager import init_db, get_all_projects, update_project_time
 from task_plan import Project
 from ui_components import set_projects_list, set_update_monitor_callback
 from date_utils import show_notification
 
 # Константы
-WIDTH = 1100
+WIDTH = 1400
 HEIGHT = 600
 TITLE = "Planner_Blender_3D"
-CURRENT_VERSION = "1.0.1"
-TARGET_EMAIL = "bobikovd81@gmail.com"  # Почта разработчика (неизменна)
-DONATE_WALLET_NUMBER = "4100119516146919"  # Номер кошелька ЮMoney (ЗАМЕНИТЕ НА СВОЙ!)
+CURRENT_VERSION = "1.0.2"
+TARGET_EMAIL = "bobikovd81@gmail.com"
+DONATE_WALLET_NUMBER = "41001XXXXXXXXXX"
 
 # Глобальные переменные
 root = None
@@ -49,13 +50,13 @@ task_frames_list = []
 auto_saver = None
 sort_var = None
 urgent_var = None
+search_var = None
 developers_label = None
 _pystray_available = False
 PROJECTS_DICT_MONITOR = {}
 tray_icon = None
 is_minimized_to_tray = False
 
-# Глобальные ссылки на UI элементы для обновления темы
 _top_panel = None
 _filter_frame = None
 _buttons_frame = None
@@ -80,30 +81,38 @@ def refresh_ui():
         )
 
 
+def on_mousewheel(event):
+    """Обработчик прокрутки колёсиком мыши"""
+    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+
+def bind_mousewheel_to_children(widget):
+    """Рекурсивно привязывает прокрутку ко всем дочерним виджетам"""
+    widget.bind("<MouseWheel>", on_mousewheel)
+    for child in widget.winfo_children():
+        bind_mousewheel_to_children(child)
+
+
 def setup_main_window():
     """Создаёт и настраивает главное окно"""
-    global root, theme, canvas, projects_inner_frame, sort_var, urgent_var, developers_label, _pystray_available
+    global root, theme, canvas, projects_inner_frame, sort_var, urgent_var, search_var, developers_label, _pystray_available
     global _top_panel, _filter_frame, _buttons_frame, _theme_container, _theme_frame, _theme_dropdown, _info_btn
     
-    # Проверяем доступность pystray
     try:
         import pystray
         _pystray_available = True
     except ImportError:
         _pystray_available = False
     
-    # Инициализация темы
     theme_manager = ThemeManager()
     theme = theme_manager
     
-    # Создание окна
     root = tk.Tk()
     root.title(TITLE)
     root.geometry(f"{WIDTH}x{HEIGHT}")
     root.resizable(True, True)
     root.configure(bg=theme.get("bg_color"))
     
-    # Установка иконки
     icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "icon.ico")
     if os.path.exists(icon_path):
         try:
@@ -114,11 +123,9 @@ def setup_main_window():
         except:
             pass
     
-    # Основной контейнер
     main_container = tk.Frame(root, bg=theme.get("bg_color"))
     main_container.pack(fill="both", expand=True)
     
-    # Верхняя панель (теперь возвращает панель и метку разработчиков)
     _top_panel, developers_label = create_top_panel(
         main_container, root, theme, 
         lambda: show_feedback_form(root, theme, TARGET_EMAIL, CURRENT_VERSION),
@@ -127,15 +134,9 @@ def setup_main_window():
     )
     _top_panel.grid(row=0, column=0, columnspan=2, pady=(5, 5), sticky="ew")
     
-    # Разделитель
-    separator = tk.Frame(main_container, height=2, bg=theme.get("accent_color"))
-    separator.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+    separator1 = tk.Frame(main_container, height=2, bg=theme.get("accent_color"))
+    separator1.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
     
-    # Панель фильтрации
-    _filter_frame, sort_var, urgent_var = create_filter_panel(main_container, theme, 
-                                                lambda: refresh_projects_list_func())
-    
-    # Панель кнопок
     _buttons_frame = create_buttons_panel(
         main_container, theme, 
         create_project=lambda: create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_save_callback, 
@@ -149,19 +150,28 @@ def setup_main_window():
         minimize_to_tray=lambda: minimize_to_tray(),
         is_pystray_available=_pystray_available
     )
+    _buttons_frame.grid(row=2, column=0, columnspan=2, pady=(0, 15), sticky="we", padx=10)
     
-    # Контейнер для выбора темы
     _theme_container = tk.Frame(main_container, bg=theme.get("bg_color"))
-    _theme_container.grid(row=3, column=1, sticky="e", padx=10, pady=(0, 15))
+    _theme_container.grid(row=2, column=1, sticky="e", padx=10, pady=(0, 15))
     
     _theme_frame, _theme_dropdown, _info_btn, _ = create_theme_selector(_theme_container, theme, theme_manager, refresh_ui)
     _theme_frame.pack(side="right")
     
-    # Контейнер с проектами
-    projects_outer_frame = tk.Frame(main_container, bg=theme.get("bg_color"), bd=2, relief="groove")
-    projects_outer_frame.grid(row=4, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 5))
+    separator2 = tk.Frame(main_container, height=2, bg=theme.get("accent_color"))
+    separator2.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 10))
     
-    main_container.grid_rowconfigure(4, weight=1)
+    _filter_frame, sort_var, urgent_var, search_var = create_filter_panel(
+        main_container, theme, 
+        lambda: refresh_projects_list_func(),
+        lambda search_text: refresh_projects_list_func()
+    )
+    _filter_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=10)
+    
+    projects_outer_frame = tk.Frame(main_container, bg=theme.get("bg_color"), bd=2, relief="groove")
+    projects_outer_frame.grid(row=5, column=0, columnspan=2, sticky="nsew", padx=10, pady=(0, 5))
+    
+    main_container.grid_rowconfigure(5, weight=1)
     main_container.grid_columnconfigure(0, weight=1)
     main_container.grid_columnconfigure(1, weight=0)
     
@@ -187,34 +197,34 @@ def setup_main_window():
     projects_inner_frame.bind("<Configure>", configure_scroll_region)
     canvas.bind("<Configure>", on_canvas_configure)
     
-    def on_mousewheel(event):
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-    
+    # Привязываем прокрутку
     canvas.bind("<MouseWheel>", on_mousewheel)
+    bind_mousewheel_to_children(projects_inner_frame)
     
     return root, canvas, projects_inner_frame
 
 
 def refresh_projects_list_func():
     """Обёртка для refresh_projects_list"""
-    global projects_inner_frame, projects_objects_list, task_frames_list, sort_var, urgent_var, canvas
+    global projects_inner_frame, projects_objects_list, task_frames_list, sort_var, urgent_var, canvas, search_var
     
     from ui_components import create_task_frame
     
     refresh_projects_list(
         projects_inner_frame, projects_objects_list, task_frames_list,
-        sort_var, urgent_var, canvas,
+        sort_var, urgent_var, canvas, search_var,
         lambda parent, proj, frames, callback: create_task_frame(parent, proj, frames, callback)
     )
+    
+    # После обновления списка привязываем прокрутку ко всем новым виджетам
+    bind_mousewheel_to_children(projects_inner_frame)
 
 
 def auto_save_callback(project_id, elapsed_time):
-    """Колбэк для автосохранения"""
     update_project_time(project_id, elapsed_time)
 
 
 def show_statistics():
-    """Показывает статистику"""
     from tkinter import messagebox
     
     total_time = 0
@@ -237,7 +247,6 @@ def show_statistics():
 
 
 def toggle_startup():
-    """Переключает автозагрузку"""
     from core.startup_manager import add_to_startup, remove_from_startup, is_in_startup
     
     if is_in_startup():
@@ -247,7 +256,6 @@ def toggle_startup():
 
 
 def minimize_to_tray():
-    """Сворачивает в трей"""
     global tray_icon, is_minimized_to_tray, root
     
     if not _pystray_available:
@@ -298,18 +306,32 @@ def minimize_to_tray():
         root.iconify()
 
 
+def confirm_and_close():
+    """Подтверждение закрытия и сохранение"""
+    global auto_saver, projects_objects_list, root
+    
+    print("[INFO] Сохранение всех проектов перед закрытием...")
+    for project in projects_objects_list:
+        if project.timer_running:
+            project.stop_timer()
+        else:
+            auto_save_callback(project.id, project.elapsed_time)
+    
+    print("[INFO] Закрытие программы...")
+    if auto_saver:
+        auto_saver.stop()
+    root.destroy()
+
+
 def on_closing():
-    """Закрытие программы с проверкой активных таймеров"""
+    """Закрытие программы с проверкой активных таймеров и дедлайнов"""
     from tkinter import messagebox
     
-    # Проверяем, есть ли активные таймеры
     active_projects = [p for p in projects_objects_list if p.timer_running]
     
     if active_projects:
-        # Формируем список проектов с активными таймерами
         project_names = "\n".join([f"  • {p.name}" for p in active_projects])
         
-        # Показываем предупреждение
         result = messagebox.askyesno(
             "⚠️ Активные таймеры",
             f"Обнаружены проекты с активными таймерами:\n\n{project_names}\n\n"
@@ -324,15 +346,16 @@ def on_closing():
         if not result:
             return
     
-    # Закрываем программу
-    print("[INFO] Закрытие программы...")
-    if auto_saver:
-        auto_saver.stop()
-    root.destroy()
+    projects_with_deadline = [p for p in projects_objects_list if p.get_deadline_date_obj()]
+    
+    if projects_with_deadline:
+        from dialogs.deadline_warning import show_deadline_warning
+        show_deadline_warning(root, theme, projects_objects_list, confirm_and_close)
+    else:
+        confirm_and_close()
 
 
 def load_projects():
-    """Загружает проекты из БД"""
     global projects_objects_list, auto_saver, PROJECTS_DICT_MONITOR
     
     PROJECTS_DICT_MONITOR = {}
@@ -368,37 +391,31 @@ def load_projects():
 
 
 def main():
-    """Главная функция запуска"""
-    global root, projects_objects_list, auto_saver
+    global root, projects_objects_list, auto_saver, theme
     
-    # Подавление консоли для EXE
     suppress_console()
-    
-    # Проверка единственного экземпляра
     setup_mutex()
-    
-    # Автоустановка библиотек
     auto_install_packages()
     
-    # Настройка главного окна
     root, canvas, projects_inner_frame = setup_main_window()
     
-    # Загрузка проектов
     load_projects()
     
-    # Запуск автосохранения
     if auto_saver:
         auto_saver.start()
     
-    # Запуск мониторингов
     start_file_monitoring(root)
     start_process_monitoring()
     
-    # Настройка закрытия
     root.protocol("WM_DELETE_WINDOW", on_closing)
     
-    # Проверка обновлений при запуске
     root.after(3000, lambda: check_for_updates(CURRENT_VERSION, silent=True))
+    
+    if should_show_deadline_notification():
+        root.after(500, lambda: show_deadline_notification(
+            root, theme, projects_objects_list, 
+            lambda: set_dont_show_deadline_today()
+        ))
     
     print("[INFO] Запуск главного окна программы...")
     root.mainloop()

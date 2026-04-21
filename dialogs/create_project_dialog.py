@@ -32,7 +32,7 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     dialog.geometry(f"{width}x{height}+{x}+{y}")
     dialog.resizable(False, False)
     
-    # Основной контейнер с прокруткой (на случай, если содержимое не помещается)
+    # Основной контейнер с прокруткой
     main_canvas = tk.Canvas(dialog, bg=theme.get("bg_color"), highlightthickness=0)
     scrollbar = tk.Scrollbar(dialog, orient="vertical", command=main_canvas.yview)
     main_canvas.configure(yscrollcommand=scrollbar.set)
@@ -47,7 +47,6 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     
     main_frame.bind("<Configure>", configure_scroll_region)
     
-    # Используем grid для фиксации порядка
     row = 0
     
     # Заголовок
@@ -56,35 +55,7 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
              bg=theme.get("bg_color"), fg=theme.get("fg_color")).grid(row=row, column=0, columnspan=2, pady=(0, 20), sticky="ew")
     row += 1
     
-    # ===== 1. СПОСОБ СОЗДАНИЯ =====
-    creation_type_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
-    creation_type_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 15))
-    
-    tk.Label(creation_type_frame, text="📌 Способ создания:", font=("Arial", 11),
-             bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(anchor="w", pady=(0, 5))
-    
-    creation_type_var = tk.StringVar(value="new")
-    
-    new_file_radio = tk.Radiobutton(creation_type_frame, text="Создать новый .blend файл", 
-                                    variable=creation_type_var, value="new",
-                                    bg=theme.get("bg_color"), fg=theme.get("fg_color"),
-                                    selectcolor=theme.get("bg_color"))
-    new_file_radio.pack(anchor="w", padx=20)
-    
-    existing_file_radio = tk.Radiobutton(creation_type_frame, text="Использовать существующий .blend файл", 
-                                         variable=creation_type_var, value="existing",
-                                         bg=theme.get("bg_color"), fg=theme.get("fg_color"),
-                                         selectcolor=theme.get("bg_color"))
-    existing_file_radio.pack(anchor="w", padx=20)
-    
-    row += 1
-    
-    # Разделитель
-    separator1 = tk.Frame(main_frame, height=1, bg=theme.get("accent_color"))
-    separator1.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 15))
-    row += 1
-    
-    # ===== 2. НАЗВАНИЕ ПРОЕКТА =====
+    # ===== 1. НАЗВАНИЕ ПРОЕКТА =====
     name_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
     name_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
     
@@ -105,7 +76,7 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     name_status.pack(anchor="w", pady=(2, 0))
     row += 1
     
-    # ===== 3. ОПИСАНИЕ ПРОЕКТА =====
+    # ===== 2. ОПИСАНИЕ ПРОЕКТА =====
     desc_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
     desc_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 12))
     
@@ -122,7 +93,34 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     desc_status.pack(anchor="w", pady=(2, 0))
     row += 1
     
-    # ===== 4. КОНТЕЙНЕРЫ ДЛЯ ФАЙЛОВ (оба всегда на месте, но один скрыт) =====
+    # ===== 3. СПОСОБ СОЗДАНИЯ =====
+    creation_type_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
+    creation_type_frame.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(0, 15))
+    
+    tk.Label(creation_type_frame, text="📌 Способ создания:", font=("Arial", 11),
+             bg=theme.get("bg_color"), fg=theme.get("fg_color")).pack(anchor="w", pady=(0, 5))
+    
+    creation_type_var = tk.StringVar(value="new")
+    
+    new_file_radio = tk.Radiobutton(creation_type_frame, text="Создать новый .blend файл", 
+                                    variable=creation_type_var, value="new",
+                                    bg=theme.get("bg_color"), fg=theme.get("fg_color"),
+                                    selectcolor=theme.get("bg_color"))
+    new_file_radio.pack(anchor="w", padx=20)
+    
+    existing_file_radio = tk.Radiobutton(creation_type_frame, text="Использовать существующий .blend файл", 
+                                         variable=creation_type_var, value="existing",
+                                         bg=theme.get("bg_color"), fg=theme.get("fg_color"),
+                                         selectcolor=theme.get("bg_color"))
+    existing_file_radio.pack(anchor="w", padx=20)
+    row += 1
+    
+    # Разделитель
+    separator1 = tk.Frame(main_frame, height=1, bg=theme.get("accent_color"))
+    separator1.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 15))
+    row += 1
+    
+    # ===== 4. КОНТЕЙНЕРЫ ДЛЯ ФАЙЛОВ =====
     
     # Контейнер для нового файла
     new_file_frame = tk.Frame(main_frame, bg=theme.get("bg_color"))
@@ -235,7 +233,6 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
                                    font=("Arial", 8), bg=theme.get("bg_color"), fg="gray")
     existing_file_info.pack(anchor="w", pady=(2, 0))
     
-    # Функция обновления информации о выбранном файле
     def update_existing_file_info(*args):
         file_path = existing_file_path_var.get()
         if file_path and os.path.exists(file_path):
@@ -247,7 +244,6 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     
     existing_file_path_var.trace_add("write", update_existing_file_info)
     
-    # Функция переключения видимости (оба фрейма уже на своих местах, просто скрываем/показываем)
     def toggle_creation_type(*args):
         if creation_type_var.get() == "new":
             new_file_frame.grid()
@@ -257,8 +253,7 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
             existing_file_frame.grid()
     
     creation_type_var.trace_add("write", toggle_creation_type)
-    toggle_creation_type()  # Инициализация
-    
+    toggle_creation_type()
     row += 1
     
     # ===== 5. ВЕРСИЯ BLENDER =====
@@ -374,7 +369,6 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
     buttons_frame_dialog = tk.Frame(main_frame, bg=theme.get("bg_color"))
     buttons_frame_dialog.grid(row=row, column=0, columnspan=2, sticky="ew", pady=(10, 0))
     
-    # Валидация полей
     def validate_fields():
         valid = True
         
@@ -430,11 +424,13 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
         
         return valid
     
-    # Создание проекта
     def create_new_project():
         if not validate_fields():
             messagebox.showerror("Ошибка", "Заполните все обязательные поля!", parent=dialog)
             return
+        
+        show_notification("⏳ Создание проекта через Blender... Подождите 3-5 секунд", "info", 4000)
+        dialog.update()
         
         name = name_entry.get().strip()
         description = desc_text.get("1.0", "end-1c").strip()
@@ -469,7 +465,6 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
         creation_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
         if creation_type_var.get() == "new":
-            # Создание нового файла
             blend_name_raw = filename_entry.get().strip()
             blend_name_safe = "".join(c for c in blend_name_raw if c.isalnum() or c in (' ', '.', '_')).rstrip()
             if not blend_name_safe:
@@ -480,8 +475,7 @@ def create_project_dialog(root, theme, projects_objects_list, auto_saver, auto_s
             full_file_path = os.path.join(selected_folder, f"{blend_name_safe}.blend")
             full_file_path = os.path.normpath(full_file_path)
             
-            # Создаём файл через Blender
-            show_notification("⏳ Создание проекта через Blender... Подождите 3-5 секунд", "info", 4000)
+            show_notification("⏳ Создание файла через Blender...", "info", 3000)
             dialog.update()
             
             file_created = False
@@ -524,14 +518,12 @@ bpy.ops.wm.save_as_mainfile(filepath=r'{full_file_path}')
                                    "Убедитесь, что выбранная версия Blender работает корректно.", parent=dialog)
                 return
         else:
-            # Использование существующего файла
             full_file_path = existing_file_path_var.get()
             if not os.path.exists(full_file_path):
                 messagebox.showerror("Ошибка", f"Файл не найден:\n{full_file_path}", parent=dialog)
                 return
             blend_name_safe = os.path.splitext(os.path.basename(full_file_path))[0]
         
-        # Сохраняем проект в БД
         project_data_for_db = {
             'name': name,
             'description': description,

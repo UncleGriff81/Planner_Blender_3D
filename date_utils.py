@@ -76,7 +76,7 @@ def create_calendar_window(parent, callback):
     # Определяем цветовую тему
     try:
         bg_color = parent.winfo_toplevel().cget("bg")
-        accent_color = parent.winfo_topleplevel().cget("accent_color") if hasattr(parent.winfo_toplevel(), 'cget') else "#4a4a4a"
+        accent_color = parent.winfo_toplevel().cget("accent_color") if hasattr(parent.winfo_toplevel(), 'cget') else "#4a4a4a"
         error_color = parent.winfo_toplevel().cget("error_color") if hasattr(parent.winfo_toplevel(), 'cget') else "#c62828"
     except:
         bg_color = "#282828"

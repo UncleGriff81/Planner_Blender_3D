@@ -36,6 +36,11 @@ class ToolTip:
 def create_filter_panel(parent, theme, refresh_callback, search_callback=None):
     """Создаёт панель с сортировкой, фильтрацией и поиском"""
     filter_frame = tk.Frame(parent, bg=theme.get("bg_color"))
+    filter_frame.grid(row=4, column=0, columnspan=2, sticky="ew", padx=10)
+    
+    # ===== РАЗДЕЛИТЕЛЬНАЯ ПОЛОСА (над всей панелью) =====
+    top_separator = tk.Frame(filter_frame, height=2, bg=theme.get("accent_color"))
+    top_separator.pack(fill="x", pady=(0, 10))
     
     # ===== КОНТЕЙНЕР ДЛЯ СОДЕРЖИМОГО =====
     content_frame = tk.Frame(filter_frame, bg=theme.get("bg_color"))

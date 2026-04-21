@@ -24,6 +24,7 @@ from dialogs.create_project_dialog import create_project_dialog
 from dialogs.feedback_dialog import show_feedback_form
 from dialogs.donate_dialog import show_donate_form
 from dialogs.deadline_notification import show_deadline_notification
+from dialogs.deadline_warning import show_deadline_warning
 from theme_manager import ThemeManager
 from auto_saver import AutoSaver
 from path_utils import load_config, should_show_deadline_notification, set_dont_show_deadline_today
@@ -36,9 +37,9 @@ from date_utils import show_notification
 WIDTH = 1400
 HEIGHT = 600
 TITLE = "Planner_Blender_3D"
-CURRENT_VERSION = "1.0.2"
+CURRENT_VERSION = "1.0.3"
 TARGET_EMAIL = "bobikovd81@gmail.com"
-DONATE_WALLET_NUMBER = "41001XXXXXXXXXX"
+DONATE_WALLET_NUMBER = "4100119516146919"
 
 # Глобальные переменные
 root = None
@@ -327,11 +328,11 @@ def on_closing():
     """Закрытие программы с проверкой активных таймеров и дедлайнов"""
     from tkinter import messagebox
     
+    # Проверяем активные таймеры
     active_projects = [p for p in projects_objects_list if p.timer_running]
     
     if active_projects:
         project_names = "\n".join([f"  • {p.name}" for p in active_projects])
-        
         result = messagebox.askyesno(
             "⚠️ Активные таймеры",
             f"Обнаружены проекты с активными таймерами:\n\n{project_names}\n\n"
@@ -342,14 +343,13 @@ def on_closing():
             f"Всё равно закрыть программу?",
             icon='warning'
         )
-        
         if not result:
             return
     
+    # Проверяем проекты с дедлайнами
     projects_with_deadline = [p for p in projects_objects_list if p.get_deadline_date_obj()]
     
     if projects_with_deadline:
-        from dialogs.deadline_warning import show_deadline_warning
         show_deadline_warning(root, theme, projects_objects_list, confirm_and_close)
     else:
         confirm_and_close()

@@ -25,6 +25,11 @@ _projects_objects_list = None
 _update_monitor_callback = None
 
 
+def get_root_window():
+    """Возвращает корневое окно программы"""
+    return tk._default_root
+
+
 def set_projects_list(projects_list):
     """Устанавливает глобальный список проектов"""
     global _projects_objects_list
@@ -93,7 +98,7 @@ def create_task_frame(parent_frame, project, task_frames_list=None, renumber_cal
     header_frame, deadline_label, id_label = create_header_frame(proj_frame, frame_bg, theme, project, deadline_color)
     header_frame.pack(fill="x", pady=(0, 8))
     
-    # Панель таймера
+    # Панель таймера (возвращает frame, label и label_var)
     timer_frame, timer_label, timer_label_var = create_timer_frame(proj_frame, frame_bg, theme, project)
     timer_frame.pack(fill="x", pady=(5, 5))
     
@@ -101,10 +106,11 @@ def create_task_frame(parent_frame, project, task_frames_list=None, renumber_cal
     info_frame, blender_label = create_info_frame(proj_frame, frame_bg, theme, project)
     info_frame.pack(fill="x", pady=(8, 0))
     
-    # Колбэки
+    # Монитор процессов
     monitor = get_process_monitor()
     file_path = project.get_full_file_path()
     
+    # Колбэки для файлового монитора
     def on_file_opened(file_path):
         print(f"[UI] Файл открыт, запускаем таймер для проекта {project.id}")
         project.start_timer()
@@ -117,6 +123,7 @@ def create_task_frame(parent_frame, project, task_frames_list=None, renumber_cal
         show_timer_notification("⏸ Таймер остановлен", theme.get("warning_color"))
         force_update(project, proj_frame, header_frame, timer_frame, deadline_label, blender_label, theme)
     
+    # Регистрируем файл в мониторе, если он существует
     if file_path and os.path.exists(file_path):
         monitor.register_file(file_path, on_file_opened, on_file_closed)
     

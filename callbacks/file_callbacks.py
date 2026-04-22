@@ -22,7 +22,6 @@ def show_blender_launch_warning(root, theme):
     warning_window.resizable(False, False)
     warning_window.attributes('-topmost', True)
     
-    # Центрируем окно
     warning_window.update_idletasks()
     x = (warning_window.winfo_screenwidth() // 2) - 275
     y = (warning_window.winfo_screenheight() // 2) - 160
@@ -100,7 +99,6 @@ bpy.ops.wm.save_as_mainfile(filepath=r'{full_path}')
         
         cmd = [blender_path, '--background', '--python', script_path]
         
-        # Запускаем без консоли
         if sys.platform == "win32":
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -163,7 +161,6 @@ def launch_blender(project, monitor, on_file_opened, on_file_closed, create_blen
     if file_path and os.path.exists(file_path):
         monitor.register_file(file_path, on_file_opened, on_file_closed)
     
-    # Показываем предупреждение о консоли (поверх всех окон)
     root = tk._default_root
     if root:
         theme = ThemeManager()
@@ -173,7 +170,6 @@ def launch_blender(project, monitor, on_file_opened, on_file_closed, create_blen
         blender_path = os.path.normpath(project.blender_path)
         file_path = os.path.normpath(file_path)
         
-        # Запускаем Blender
         subprocess.Popen([blender_path, file_path], shell=False)
         print(f"[LAUNCH] Запущен Blender с файлом: {file_path}")
         

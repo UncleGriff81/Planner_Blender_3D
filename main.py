@@ -8,9 +8,16 @@ import tkinter as tk
 # Добавляем пути для импортов
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Импорты из модулей
+# Импорты из модулей (изменён порядок)
+from path_utils import load_config, should_show_deadline_notification, set_dont_show_deadline_today
 from core.app_init import auto_install_packages, setup_mutex, suppress_console
 from core.startup_manager import is_in_startup
+from theme_manager import ThemeManager
+from auto_saver import AutoSaver
+from db_manager import init_db, get_all_projects, update_project_time
+from task_plan import Project
+from ui_components import set_projects_list, set_update_monitor_callback
+from date_utils import show_notification
 from ui.top_panel import create_top_panel
 from ui.filter_panel import create_filter_panel
 from ui.buttons_panel import create_buttons_panel
@@ -25,19 +32,12 @@ from dialogs.feedback_dialog import show_feedback_form
 from dialogs.donate_dialog import show_donate_form
 from dialogs.deadline_notification import show_deadline_notification
 from dialogs.deadline_warning import show_deadline_warning
-from theme_manager import ThemeManager
-from auto_saver import AutoSaver
-from path_utils import load_config, should_show_deadline_notification, set_dont_show_deadline_today
-from db_manager import init_db, get_all_projects, update_project_time
-from task_plan import Project
-from ui_components import set_projects_list, set_update_monitor_callback
-from date_utils import show_notification
 
 # Константы
 WIDTH = 1400
 HEIGHT = 600
 TITLE = "Planner_Blender_3D"
-CURRENT_VERSION = "1.0.3"
+CURRENT_VERSION = "1.0.4"
 TARGET_EMAIL = "bobikovd81@gmail.com"
 DONATE_WALLET_NUMBER = "4100119516146919"
 
@@ -110,7 +110,8 @@ def setup_main_window():
     
     root = tk.Tk()
     root.title(TITLE)
-    root.geometry(f"{WIDTH}x{HEIGHT}")
+    root.state('zoomed')  # Разворачиваем окно на весь экран
+    # root.geometry(f"{WIDTH}x{HEIGHT}")  # Закомментировано, используем развёрнутое окно
     root.resizable(True, True)
     root.configure(bg=theme.get("bg_color"))
     
@@ -135,7 +136,7 @@ def setup_main_window():
     )
     _top_panel.grid(row=0, column=0, columnspan=2, pady=(5, 5), sticky="ew")
     
-    separator1 = tk.Frame(main_container, height=2, bg=theme.get("accent_color"))
+    separator1 = tk.Frame(main_container, height=2, bg=theme.get("bg_color"))
     separator1.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
     
     _buttons_frame = create_buttons_panel(
@@ -159,7 +160,7 @@ def setup_main_window():
     _theme_frame, _theme_dropdown, _info_btn, _ = create_theme_selector(_theme_container, theme, theme_manager, refresh_ui)
     _theme_frame.pack(side="right")
     
-    separator2 = tk.Frame(main_container, height=2, bg=theme.get("accent_color"))
+    separator2 = tk.Frame(main_container, height=2, bg=theme.get("bg_color"))
     separator2.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(10, 10))
     
     _filter_frame, sort_var, urgent_var, search_var = create_filter_panel(
@@ -328,7 +329,6 @@ def on_closing():
     """Закрытие программы с проверкой активных таймеров и дедлайнов"""
     from tkinter import messagebox
     
-    # Проверяем активные таймеры
     active_projects = [p for p in projects_objects_list if p.timer_running]
     
     if active_projects:
@@ -346,7 +346,6 @@ def on_closing():
         if not result:
             return
     
-    # Проверяем проекты с дедлайнами
     projects_with_deadline = [p for p in projects_objects_list if p.get_deadline_date_obj()]
     
     if projects_with_deadline:

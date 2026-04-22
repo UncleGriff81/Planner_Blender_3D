@@ -2,7 +2,7 @@
 
 [Setup]
 AppName=Planner_Blender_3D
-AppVersion=1.0.3
+AppVersion=1.0.4
 DefaultDirName={userappdata}\Planner_Blender_3D
 DefaultGroupName=Planner_Blender_3D
 OutputDir=Output

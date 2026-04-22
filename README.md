@@ -2,7 +2,7 @@
 
 **Автоматический учёт времени для проектов в Blender 3D**
 
-![Version](https://img.shields.io/badge/version-1.0.1-orange)
+![Version](https://img.shields.io/badge/version-1.0.4-orange)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 
 *  ***✨ Основные возможности***

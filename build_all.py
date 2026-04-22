@@ -12,7 +12,7 @@ INNO_SETUP_PATH = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 # ===============================================
 
 PROJECT_NAME = "Planner_Blender_3D"
-VERSION = "1.0.1"
+VERSION = "1.0.4"
 
 def print_header(text):
     """Красивый вывод заголовка"""

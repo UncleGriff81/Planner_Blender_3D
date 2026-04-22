@@ -2,7 +2,6 @@
 Выбор темы оформления
 """
 import tkinter as tk
-from theme_manager import ThemeManager
 
 
 def create_theme_selector(parent, theme, theme_manager, refresh_ui_callback):
